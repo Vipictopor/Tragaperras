@@ -2,9 +2,10 @@ import random
 
 
 class Reglas():
+    total_ganado = 0
 
     def __init__(self):
-        VALOR_SIMBOLO = {
+        self.VALOR_SIMBOLO = {
             "🍒": 2,
             "🍋": 2,
             "🔔": 3,
@@ -13,26 +14,31 @@ class Reglas():
             "💰": 5,
             "7️⃣": 7
         }
-    VALOR_PATRON = {
-        "H3_FILA_0": 1,
-        "H3_FILA_1": 1,
-        "H3_FILA_2": 1,
-        "DIAGONAL_L": 1,
-        "DIAGONAL_R": 1,
-        "H4_FILA_0": 2,
-        "H4_FILA_1": 2,
-        "H4_FILA_2": 2,
-        "H5_FILA_0": 3,
-        "H5_FILA_1": 3,
-        "H5_FILA_2": 3,
-        "ZIG": 4,
-        "ZAG": 4,
-        "PATRON_ARRIBA": 7,
-        "PATRON_ABAJO": 7,
-        "OJO": 8,
-        "JACKPOT": 10
-    }
-    lista_premios = []
+        self.VALOR_PATRON = {
+            "H3_FILA_0": 1,
+            "H3_FILA_1": 1,
+            "H3_FILA_2": 1,
+            "V_FILA_0": 1,
+            "V_FILA_1": 1,
+            "V_FILA_2": 1,
+            "V_FILA_3": 1,
+            "V_FILA_4": 1,
+            "DIAGONAL_L": 1,
+            "DIAGONAL_R": 1,
+            "H4_FILA_0": 2,
+            "H4_FILA_1": 2,
+            "H4_FILA_2": 2,
+            "H5_FILA_0": 3,
+            "H5_FILA_1": 3,
+            "H5_FILA_2": 3,
+            "ZIG": 4,
+            "ZAG": 4,
+            "PATRON_ARRIBA": 7,
+            "PATRON_ABAJO": 7,
+            "OJO": 8,
+            "JACKPOT": 10
+        }
+        self.lista_premios = []
 
     def generar_tirada(self, seis=False):
         simbolos = ["🍒", "🍋", "🔔", "🍀", "💎", "💰", "7️⃣"]
@@ -167,63 +173,80 @@ class Reglas():
                 (tirada[0] == tirada[14])):
             return tirada[0]
 
-    def evaluar_premios(self, tirada):
-        premios_detectados = []
+    def evaluar_premios(self, tirada=[]):
 
         # --- 1. EVALUAR JACKPOT (Prioridad Máxima) ---
         if self.jackpot(tirada):
             # Premio Jackpot
-            self.lista_premios.append("JACKPOT", self.jackpot(tirada))
+            self.lista_premios.append(["JACKPOT", self.jackpot(tirada)])
 
         # --- 2. EVALUAR HORIZONTALES (Por cada fila) ---
         # Fila 0: pos 0, Fila 1: pos 5, Fila 2: pos 10
         for fila_inicio in [0, 5, 10]:
             if self.l_horizontal5(tirada, fila_inicio):
                 self.lista_premios.append(
-                    f"H5_FILA_{fila_inicio//5}", self.l_horizontal5(tirada, fila_inicio))
+                    [f"H5_FILA_{fila_inicio//5}", self.l_horizontal5(tirada, fila_inicio)])
             elif self.l_horizontal4(tirada, fila_inicio):
                 self.lista_premios.append(
-                    f"H4_FILA_{fila_inicio//5}", self.l_horizontal4(tirada, fila_inicio))
+                    [f"H4_FILA_{fila_inicio//5}", self.l_horizontal4(tirada, fila_inicio)])
             elif self.l_horizontal3(tirada, fila_inicio):
                 self.lista_premios.append(
-                    f"H3_FILA_{fila_inicio//5}", self.l_horizontal3(tirada, fila_inicio))
+                    [f"H3_FILA_{fila_inicio//5}", self.l_horizontal3(tirada, fila_inicio)])
 
         # --- 3. GRUPO ESPECIAL: ARRIBA ---
         gano_arriba = self.arriba(tirada)
         if gano_arriba:
-            self.lista_premios.append("PATRON_ARRIBA", self.arriba(tirada))
+            self.lista_premios.append(["PATRON_ARRIBA", self.arriba(tirada)])
 
         # --- 4. GRUPO ESPECIAL: ABAJO ---
         gano_abajo = self.abajo(tirada)
         if gano_abajo:
-            self.lista_premios.append("PATRON_ABAJO", self.abajo(tirada))
+            self.lista_premios.append(["PATRON_ABAJO", self.abajo(tirada)])
 
         # --- 5. PATRONES DEPENDIENTES (Solo si no salieron los jefes) ---
         if not gano_arriba:
             if self.zig(tirada):
-                self.lista_premios.append("ZIG", self.zig(tirada))
-            # Aquí irían las diagonales que dependen de "arriba"
-            if self.diagonal(tirada, pos=0, dire="l"):
-                self.lista_premios.append(
-                    "DIAGONAL_L", self.diagonal(tirada, pos=0, dire="l"))
+                self.lista_premios.append(["ZIG", self.zig(tirada)])
 
         if not gano_abajo:
             if self.zag(tirada):
-                self.lista_premios.append("ZAG", self.zag(tirada))
-            # Aquí irían las diagonales que dependen de "abajo"
-            if self.diagonal(tirada, pos=2, dire="r"):
+                self.lista_premios.append(["ZAG", self.zag(tirada)])
+
+        if not gano_arriba and not gano_abajo:
+            # Diagonal izquierda "\"
+            if self.diagonal(tirada, pos=0, dire="l"):
                 self.lista_premios.append(
-                    "DIAGONAL_R", self.diagonal(tirada, pos=2, dire="r"))
+                    ["DIAGONAL_L", self.diagonal(tirada, pos=0, dire="l")])
+            # Diagonal derecha "/"
+            if self.diagonal(tirada, pos=4, dire="r"):
+                self.lista_premios.append(
+                    ["DIAGONAL_R", self.diagonal(tirada, pos=4, dire="r")])
 
         # El "OJO" parece ser independiente, lo evaluamos aparte
         if self.ojo(tirada):
-            self.lista_premios.append("OJO", self.ojo(tirada))
+            self.lista_premios.append(["OJO", self.ojo(tirada)])
         # Las verticales tambien son inependientes
         for i in range(5):
             if self.l_vertical(tirada, pos=i):
                 self.lista_premios.append(
-                    f"V_FILA_{i}", self.l_vertical(tirada, pos=i))
-        return premios_detectados
+                    [f"V_FILA_{i}", self.l_vertical(tirada, pos=i)])
+
+    def calcular_ganancias(self, tirada=[]):
+        self.evaluar_premios(tirada)
+        total = 0
+        print("______________________________")
+        print(self.lista_premios)
+        # En las lista de premios acumulamos listas que contienen el patron en la posición 0 y el símbolo en la posición 1
+        for par in self.lista_premios:
+            patron = par[0]
+            print(f"---------{patron}---------")
+            simbolo = par[1]
+            print(
+                f"Patrón: {patron} | Símbolo: {simbolo} | Valor patrón: {self.VALOR_PATRON[patron]} | Valor símbolo: {self.VALOR_SIMBOLO[simbolo]}")
+            total += (self.VALOR_PATRON[patron] *
+                      self.VALOR_SIMBOLO[simbolo])
+            lista_premios = []
+        self.total_ganado += total
 
     def jugar(self):
         while True:
@@ -246,7 +269,9 @@ class Reglas():
                     tirada[7] == "❌" and
                     tirada[8] == "❌"
                 ), "Has perdido"
+                self.calcular_ganancias(tirada)
 
             except AssertionError as error:
                 print(error)
+                print(f"Total ganado: {self.total_ganado} créditos.")
                 break
